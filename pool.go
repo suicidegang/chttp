@@ -25,8 +25,7 @@ func (pool SyncPool) Run(in chan Req, out chan Response) {
 			defer done.Done()
 
 			for req := range in {
-				res := <-req.Response()
-				out <- res
+				out <- <-req.Response()
 			}
 		}(pid)
 	}
