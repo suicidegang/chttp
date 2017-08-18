@@ -1,9 +1,28 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"time"
 )
+
+type Req struct {
+	Client *http.Client
+	Raw    *http.Request
+}
+
+func (r Req) Response() chan Response {
+	log.Println("REQ STARTED.")
+	response := make(chan Response)
+
+	go func() {
+		client := r.Client
+		res, err := client.Do(r.Raw)
+		response <- Response{res, err}
+	}()
+
+	return response
+}
 
 type RequestOpt func(*http.Client, *http.Request) (*http.Request, error)
 
@@ -21,7 +40,7 @@ func Timeout(seconds int) RequestOpt {
 	}
 }
 
-func RequestOrPanic(opts ...RequestOpt) chan Response {
+func RequestOrPanic(opts ...RequestOpt) Req {
 	r, err := Request(opts...)
 	if err != nil {
 		panic(err)
@@ -30,27 +49,19 @@ func RequestOrPanic(opts ...RequestOpt) chan Response {
 	return r
 }
 
-func Request(opts ...RequestOpt) (chan Response, error) {
+func Request(opts ...RequestOpt) (Req, error) {
 	var (
-		req *http.Request
+		raw *http.Request
 		err error
 	)
 
 	client := &http.Client{}
 	for _, opt := range opts {
-		req, err = opt(client, req)
+		raw, err = opt(client, raw)
 		if err != nil {
-			return nil, err
+			return Req{}, err
 		}
 	}
 
-	ch := make(chan Response)
-	go func() {
-		res, err := client.Do(req)
-
-		// Having done the request send it to the response channel.
-		ch <- Response{res, err}
-	}()
-
-	return ch, nil
+	return Req{client, raw}, nil
 }

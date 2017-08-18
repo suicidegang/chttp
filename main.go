@@ -9,10 +9,14 @@ import (
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
-	pool := Pool(15)
+
+	// Two workers, 14 buffer capacity.
+	pool := Pool(2, 14)
 
 	for i := 0; i < 15; i++ {
 		delay := rand.Intn(14)
+
+		// Send request signature into the pool to be managed.
 		pool.In <- RequestOrPanic(GET("https://httpbin.org/delay/"+strconv.Itoa(delay)), Timeout(10))
 	}
 
@@ -20,13 +24,13 @@ func main() {
 	close(pool.In)
 
 	log.Println("Sink consumer starting...")
-	for r := range pool.Out {
-		if r.Err != nil {
-			log.Printf("Err while performing request %v", r.Err)
+	for response := range pool.Out {
+		if response.Err != nil {
+			log.Printf("Err while performing request %v", response.Err)
 			continue
 		}
 
-		body, err := r.ReadAll()
+		body, err := response.ReadAll()
 		if err != nil {
 			log.Printf("Err while reading data %v", err)
 			continue

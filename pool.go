@@ -6,11 +6,11 @@ import (
 
 type SyncPool struct {
 	Workers int
-	In      chan<- chan Response
+	In      chan<- Req
 	Out     <-chan Response
 }
 
-func (pool SyncPool) Run(in chan chan Response, out chan Response) {
+func (pool SyncPool) Run(in chan Req, out chan Response) {
 	var done sync.WaitGroup
 
 	// Done waiting group.
@@ -24,9 +24,9 @@ func (pool SyncPool) Run(in chan chan Response, out chan Response) {
 		go func(pid int) {
 			defer done.Done()
 
-			for r := range in {
-				data := <-r
-				out <- data
+			for req := range in {
+				res := <-req.Response()
+				out <- res
 			}
 		}(pid)
 	}
@@ -40,12 +40,12 @@ func (pool SyncPool) Run(in chan chan Response, out chan Response) {
 }
 
 // Creates a requests SyncPool with n workers.
-func Pool(n int) (pool SyncPool) {
-	pool.Workers = n
+func Pool(workers, buffers int) (pool SyncPool) {
+	pool.Workers = workers
 
 	// Prepare channels and run workers.
-	input := make(chan chan Response)
-	output := make(chan Response, n)
+	input := make(chan Req, buffers)
+	output := make(chan Response, buffers)
 
 	// Share channels...
 	pool.In = input
