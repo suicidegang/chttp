@@ -53,3 +53,8 @@ func Pool(workers, buffers int) (pool SyncPool) {
 	pool.Run(input, output)
 	return
 }
+
+// Create a symmetric pool (equal workers & buffer capacity).
+func SymmetricPool(n int) SyncPool {
+	return Pool(n, n)
+}

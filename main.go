@@ -2,22 +2,19 @@ package main
 
 import (
 	"log"
-	"math/rand"
-	"strconv"
 	"time"
 )
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
 
 	// Two workers, 14 buffer capacity.
-	pool := Pool(2, 14)
+	start := time.Now()
+	pool := Pool(20, 1000)
 
-	for i := 0; i < 15; i++ {
-		delay := rand.Intn(14)
+	for i := 0; i < 1000; i++ {
 
 		// Send request signature into the pool to be managed.
-		pool.In <- RequestOrPanic(GET("https://httpbin.org/delay/"+strconv.Itoa(delay)), Timeout(10))
+		pool.In <- RequestOrPanic(GET("https://now.httpbin.org/"), Timeout(10))
 	}
 
 	// Emulate synchronous behavior by closing input channel.
@@ -39,5 +36,5 @@ func main() {
 		log.Printf("FINISHED MAIN THREAD, len %v...", len(body))
 	}
 
-	log.Println("End processing requests.")
+	log.Printf("End processing requests in %v time.\n", time.Now().Sub(start))
 }
