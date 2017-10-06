@@ -2,14 +2,12 @@ package main
 
 import (
 	"log"
-	"time"
+	"net/url"
 )
 
 func main() {
-
-	// Two workers, 14 buffer capacity.
 	start := time.Now()
-	pool := Pool(20, 1000)
+	pool := Pool(100, 1000)
 
 	for i := 0; i < 1000; i++ {
 

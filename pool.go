@@ -1,4 +1,4 @@
-package main
+package chttp
 
 import (
 	"sync"
@@ -25,6 +25,8 @@ func (pool SyncPool) Run(in chan Req, out chan Response) {
 			defer done.Done()
 
 			for req := range in {
+				// Get a response from req.Response() channel
+				// & immediately send it right to the output channel.
 				out <- <-req.Response()
 			}
 		}(pid)
