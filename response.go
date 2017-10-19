@@ -7,8 +7,9 @@ import (
 )
 
 type Response struct {
-	Raw *http.Response
-	Err error
+	Raw     *http.Response
+	Err     error
+	Request Req
 }
 
 func (c Response) ReadAll() (body []byte, err error) {

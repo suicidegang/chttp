@@ -4,18 +4,31 @@ import (
 	"net/http"
 )
 
-type Req struct {
-	Client *http.Client
-	Raw    *http.Request
+type Req interface {
+	Client() *http.Client
+	RawRequest() *http.Request
+	Response() chan Response
 }
 
-func (r Req) Response() chan Response {
+type SimpleReq struct {
+	C   *http.Client
+	Raw *http.Request
+}
+
+func (r SimpleReq) Client() *http.Client {
+	return r.C
+}
+
+func (r SimpleReq) RawRequest() *http.Request {
+	return r.Raw
+}
+
+func (r SimpleReq) Response() chan Response {
 	response := make(chan Response)
 
 	go func() {
-		client := r.Client
-		res, err := client.Do(r.Raw)
-		response <- Response{res, err}
+		res, err := r.C.Do(r.Raw)
+		response <- Response{res, err, r}
 	}()
 
 	return response
@@ -40,9 +53,9 @@ func Request(opts ...RequestOpt) (Req, error) {
 	for _, opt := range opts {
 		raw, err = opt(client, raw)
 		if err != nil {
-			return Req{}, err
+			return SimpleReq{}, err
 		}
 	}
 
-	return Req{client, raw}, nil
+	return SimpleReq{client, raw}, nil
 }
