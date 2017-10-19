@@ -8,6 +8,7 @@ type Req interface {
 	Client() *http.Client
 	RawRequest() *http.Request
 	Response() chan Response
+	Request() Req
 }
 
 type SimpleReq struct {
@@ -23,12 +24,16 @@ func (r SimpleReq) RawRequest() *http.Request {
 	return r.Raw
 }
 
+func (r SimpleReq) Request() Req {
+	return r
+}
+
 func (r SimpleReq) Response() chan Response {
 	response := make(chan Response)
 
 	go func() {
 		res, err := r.C.Do(r.Raw)
-		response <- Response{res, err, r}
+		response <- Response{res, err, r.Request()}
 	}()
 
 	return response
